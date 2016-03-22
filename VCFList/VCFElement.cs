@@ -7,12 +7,16 @@ using System.Text;
 
 namespace VCFList
 {
+    #region VCFElement Class
     public class VCFElement
     {
+        #region public_param
         public string Name { get { return this._Name; } }
         public string Value { get { return this._Value; } }
         public string Parameters { get { return this._Parameters; } }
+        #endregion
 
+        #region private_param
         private string _Name;
         private string _Value;
         private string _Parameters;
@@ -20,7 +24,9 @@ namespace VCFList
         private charset_types _charset;
         private enum encoding_types { def, qp }
         private encoding_types _encoding;
+        #endregion
 
+        #region contructors
         public VCFElement()
         {
             this._Name = "";
@@ -34,7 +40,9 @@ namespace VCFList
         {
             ProcessesString(value);
         }
+        #endregion
 
+        #region Interacting_public_methods
         public void AddInfo(string value)
         {
             if (this._Name == "")
@@ -50,8 +58,23 @@ namespace VCFList
 
         public void UppdateInfo(string value)
         {
-        }
+            if (GetName(value) != "")
+            {
+                this._Name = "";
+                this._Value = "";
+                this._Parameters = "";
 
+                value = value.Replace("\n", "");
+                ProcessesString(value);
+            }
+            else
+            {
+                throw new Exception("There is an no name element! This cannot be added");
+            }
+        }
+        #endregion
+
+        #region Private_methods
         private void ProcessesString(string value)
         {
             string teStr1, teStr2;
@@ -156,9 +179,29 @@ namespace VCFList
 
             return teRes;
         }
+        #endregion
 
+        #region Public_Static_functions
+        public static string GetName(string ElementString)
+        {
+            if (ElementString.IndexOf(':') >= 0)
+                return ElementString.Split(':')[0];
+            else
+                return "";
+        }
+
+        public static string GetValue(string ElementString)
+        {
+            if (ElementString.IndexOf(':') >= 0)
+                return ElementString.Split(':')[0];
+            else
+                return "";
+        }
+        #endregion
     }
+    #endregion
 
+    #region VCFTypes_enums Class
     public class VCFTypes 
     {
         enum Types { V2_1, V3_0, V4_0 };
@@ -240,4 +283,5 @@ namespace VCFList
             XML             //    |   | S | Any XML data that is attached to the vCard. This is used if the vCard was encoded in XML (xCard standard) and the XML document contained elements which are not part of the xCard standard.	XML:<b>Not an xCard XML element</b>
         }
     }
+    #endregion
 }

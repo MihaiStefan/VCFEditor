@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using VCFList;
+using System.IO;
 
 namespace CVFList__ElementsTest
 {
@@ -65,10 +66,18 @@ namespace CVFList__ElementsTest
         private void button6_Click(object sender, EventArgs e)
         {
             VCFFile teFile1, teFile2;
+            SaveFileDialog sfd = new SaveFileDialog();
+
             teFile1 = new VCFFile(textBox5.Text);
             teFile2 = new VCFFile(textBox6.Text);
             teFile1.Merge(teFile2);
-            teFile1.SaveToFile("tot.vcf");
+            if (sfd.ShowDialog() == DialogResult.OK)
+            {
+                if (Path.GetExtension(sfd.FileName).ToLower() != ".vcf")
+                    teFile1.SaveToFile(sfd.FileName+".vcf");
+                else
+                    teFile1.SaveToFile(sfd.FileName);
+            }
         }
 
         private void button7_Click(object sender, EventArgs e)
