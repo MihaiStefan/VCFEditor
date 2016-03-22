@@ -1,0 +1,13 @@
+# User-specific files
+*.suo
+*.user
+
+#Visual Studio
+**/[Oo]bj/[Dd]ebug/
+**/[Bb]in/[Dd]ebug/*.pdb
+**/[Bb]in/[Dd]ebug/*.exe.config
+**/[Bb]in/[Dd]ebug/*.vshost.exe
+**/[Bb]in/[Dd]ebug/*.vshost.exe.config
+**/[Bb]in/[Dd]ebug/*.vshost.exe.manifest
+
+[Pp]rivate/
