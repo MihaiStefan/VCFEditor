@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Mail;
 using System.Linq;
 using System.Text;
+using System.Windows.Forms;
 //using System.Threading.Tasks;
 
 namespace VCFList
@@ -11,8 +12,22 @@ namespace VCFList
     public class VCFElement
     {
         #region public_param
-        public string Name { get { return this._Name; } }
-        public string Value { get { return this._Value; } }
+        public string Name
+        { 
+            get { return this._Name; }
+            set
+            {
+                ProcessName(value);
+            }
+        }
+        public string Value
+        { 
+            get { return this._Value; }
+            set
+            {
+                ProcessValue(value);
+            }
+        }
         public string Parameters { get { return this._Parameters; } }
         #endregion
 
@@ -38,7 +53,7 @@ namespace VCFList
 
         public VCFElement(string value)
         {
-            ProcessesString(value);
+            UppdateInfo(value);
         }
         #endregion
 
@@ -47,8 +62,7 @@ namespace VCFList
         {
             if (this._Name == "")
             {
-                value = value.Replace("\n", "");
-                ProcessesString(value);
+                UppdateInfo(value);
             }
             else
             {
@@ -58,24 +72,61 @@ namespace VCFList
 
         public void UppdateInfo(string value)
         {
-            if (GetName(value) != "")
+            if (CheckForRightness(value))
             {
                 this._Name = "";
                 this._Value = "";
                 this._Parameters = "";
+                this._charset = charset_types.def;
+                this._encoding = encoding_types.def;
 
                 value = value.Replace("\n", "");
-                ProcessesString(value);
+                ProcessString(value);
             }
             else
             {
                 throw new Exception("There is an no name element! This cannot be added");
             }
         }
+
+        public override string ToString()
+        {
+            string resultStr;
+
+
+            resultStr = this._Name + DoParamAndValueString();
+
+            return resultStr;
+        }
         #endregion
 
         #region Private_methods
-        private void ProcessesString(string value)
+        private string DoParamAndValueString()
+        {
+            if (this._Name.ToUpper() == "PHOTO")
+            {
+                return
+                    (((this.Parameters != "") && (this.Parameters != null)) ?
+                            ";" + this._Parameters + ":" + this._Value
+                        : ":" + this._Value);
+                            
+            }
+            return 
+                (((this.Parameters != "") && (this.Parameters != null)) ?
+                    ";" + this._Parameters + ":" + "=" + BitConverter.ToString(Encoding.UTF8.GetBytes(this._Value)).Replace('-', '=')
+                : ":" + this._Value);
+        }
+
+        private Boolean CheckForRightness(string ElementString)
+        {
+            if (GetName(ElementString) == "")
+            {
+                return false;
+            }
+            return true;
+        }
+
+        private void ProcessString(string value)
         {
             string teStr1, teStr2;
 
@@ -84,40 +135,55 @@ namespace VCFList
                 teStr1 = value.Split(':')[0];
                 teStr2 = value.Split(':')[1];
 
-                this._Name = CheckKeyForSpecialSettings(teStr1);
+                this._Name = CheckKeyForParameters(teStr1);
                 this._Value = DoEncodingProcess(teStr2);
             }
             else
             {
-                this._Name = CheckKeyForSpecialSettings(value);
+                this._Name = CheckKeyForParameters(value);
                 this._Value = "";
             }
         }
 
-        private string CheckKeyForSpecialSettings(string value)
+        private string CheckKeyForParameters(string value)
         {
             string[] stringList;
+            string[] paramStringList;
             string teStr;
 
             stringList = value.Split(';');
-            teStr = Array.Find(stringList, s => s.ToUpper().Contains("CHARSET"));
-            if (teStr != null)
+            if (stringList.Length > 1)
             {
-                if (teStr.ToUpper().Contains("UTF-8"))
-                {
-                    this._charset = charset_types.utf_8;
-                }
-                stringList = stringList.Where(val => !(val.ToUpper().Contains("CHARSET"))).ToArray();
-            }
+                paramStringList = new string[stringList.Length - 1];
+                Array.Copy(stringList, 1, paramStringList, 0, stringList.Length - 1);
+                this._Parameters = string.Join(";", paramStringList);
 
-            teStr = Array.Find(stringList, s => s.ToUpper().Contains("ENCODING"));
-            if (teStr != null)
-            {
-                if (teStr.ToUpper().Contains("QUOTED-PRINTABLE"))
+                if (stringList[0].ToUpper().Contains("PHOTO"))
                 {
-                    this._encoding = encoding_types.qp;
+                    Array.Copy(stringList, 1, paramStringList, 0, stringList.Length - 1);
+                    this._Parameters = string.Join(";", paramStringList);
+                    return stringList[0];
                 }
-                stringList = stringList.Where(val => !(val.ToUpper().Contains("ENCODING"))).ToArray();
+
+                teStr = Array.Find(stringList, s => s.ToUpper().Contains("CHARSET"));
+                if (teStr != null)
+                {
+                    if (teStr.ToUpper().Contains("UTF-8"))
+                    {
+                        this._charset = charset_types.utf_8;
+                    }
+                    stringList = stringList.Where(val => !(val.ToUpper().Contains("CHARSET"))).ToArray();
+                }
+
+                teStr = Array.Find(stringList, s => s.ToUpper().Contains("ENCODING"));
+                if (teStr != null)
+                {
+                    if (teStr.ToUpper().Contains("QUOTED-PRINTABLE"))
+                    {
+                        this._encoding = encoding_types.qp;
+                    }
+                    stringList = stringList.Where(val => !(val.ToUpper().Contains("ENCODING"))).ToArray();
+                }
             }
             return string.Join(";", stringList);
         }
@@ -179,6 +245,48 @@ namespace VCFList
 
             return teRes;
         }
+
+        private Boolean IsTheStringAscii(string value)
+        {
+            string tstring = Encoding.ASCII.GetString(Encoding.ASCII.GetBytes(value));
+            return (string.Compare(tstring, value) == 0);
+        }
+
+        private void ProcessName(string value)
+        {
+            if (!(IsTheStringAscii(value)))
+            {
+                throw new Exception("You name contains forbidden chars!");
+            }
+            else
+            {
+                if (VCFTypes.IsInVCFFields(value))
+                {
+                    this._Name = value;
+                }
+                else
+                {
+                    throw new Exception("You name is not in the names list!");
+                }
+            }
+        }
+
+        private void ProcessValue(string value)
+        {
+            if (!(IsTheStringAscii(value)))
+            {
+                this._charset = charset_types.utf_8;
+                this._encoding = encoding_types.qp;
+
+            }
+            else
+            {
+                this._charset = charset_types.def;
+                this._encoding = encoding_types.def;
+            }
+
+            this._Value = value;
+        }
         #endregion
 
         #region Public_Static_functions
@@ -205,10 +313,11 @@ namespace VCFList
     public class VCFTypes 
     {
         enum Types { V2_1, V3_0, V4_0 };
-        enum Fields {       // 2.1|3.0|4.0| Description -> Example
+        enum Fields {         // 2.1|3.0|4.0| Description -> Example
+            //none,
             ADR,            //  S | S | S | A structured representation of the physical delivery address for the vCard object.  ADR;TYPE=home:;;123 Main St.;Springfield;IL;12345;USA
-            AGENT,	        //  S | S |   | Information about another person who will act on behalf of the vCard object. Typically this would be an area administrator, assistant, or secretary for the individual. Can be either a URL or an embedded vCard.   AGENT:http://mi6.gov.uk/007
-            ANNIVERSARY,    //	  |   | S | Defines the person's anniversary.   ANNIVERSARY:19901021
+            AGENT,          //  S | S |   | Information about another person who will act on behalf of the vCard object. Typically this would be an area administrator, assistant, or secretary for the individual. Can be either a URL or an embedded vCard.   AGENT:http://mi6.gov.uk/007
+            ANNIVERSARY,    //    |   | S | Defines the person's anniversary.   ANNIVERSARY:19901021
             BDAY,           //  S | S | S | Date of birth of the individual associated with the vCard.  BDAY:19700310
             BEGIN,          //  R | R | R | All vCards must start with this property.   BEGIN:VCARD
             CALADRURI,      //    |   | S | A URL to use for sending a scheduling request to the person's calendar. CALADRURI:http://example.com/calendar/jdoe
@@ -281,6 +390,20 @@ namespace VCFList
             URL,            //  S | S | S | A URL pointing to a website that represents the person in some way. URL:http://www.johndoe.com
             VERSION,        //  R | R | R | The version of the vCard specification. In versions 3.0 and 4.0, this must come right after the BEGIN property. VERSION:3.0
             XML             //    |   | S | Any XML data that is attached to the vCard. This is used if the vCard was encoded in XML (xCard standard) and the XML document contained elements which are not part of the xCard standard.	XML:<b>Not an xCard XML element</b>
+        }
+
+        public static Boolean IsInVCFFields(string value)
+        {
+            Fields teField;
+            try
+            {
+                teField = (Fields)Enum.Parse(typeof(Fields), value.ToUpper());
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
         }
     }
     #endregion

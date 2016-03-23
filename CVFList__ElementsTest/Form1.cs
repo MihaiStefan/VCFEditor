@@ -24,8 +24,7 @@ namespace CVFList__ElementsTest
             VCFElement teelement = new VCFElement(textBox1.Text);
             textBox2.Text = teelement.Name;
             textBox3.Text = teelement.Value;
-
-
+            textBox4.Text = teelement.ToString();
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -105,6 +104,12 @@ namespace CVFList__ElementsTest
         {
             VCFPhoto tePhoto = new VCFPhoto(pictureBox2.Image);
             textBox4.Text = tePhoto.CodedText;
+        }
+
+        private void button11_Click(object sender, EventArgs e)
+        {
+            VCFElement teelement = new VCFElement();
+            teelement.Name = textBox2.Text;
         }
 
     }
