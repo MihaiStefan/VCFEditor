@@ -8,10 +8,10 @@ namespace VCFList
 {
     public class VCFCard
     {
-        //KeyList is the list of the key that are in this Card
+        //KeyList is the list of the keys that are in this Card
         public List<string> KeysList
         {
-            get { return GetElementsList(); }
+            get { return GetElementsKeyList(); }
         }
 
         //The public list of elements that are in this Card
@@ -21,7 +21,7 @@ namespace VCFList
         }
 
         //The list of strings that form this Card
-        public List<string> _StrElement;
+        public List<string> StrElement;
 
         //The private list of elements that are in this Card
         private List<VCFElement> _ElementsList;
@@ -30,7 +30,7 @@ namespace VCFList
 
         public VCFCard()
         {
-            this._StrElement = new List<string>();
+            this.StrElement = new List<string>();
             this._ElementsList = new List<VCFElement>();
             this.NbrOfElements = 0;
         }
@@ -38,11 +38,15 @@ namespace VCFList
         //Add an element to the Card object
         public void AddStrElement(string value)
         {
-            this._StrElement.Add(value);
-            ScanForElement(value);
+            VCFElement teelement = new VCFElement();
+
+            this.StrElement.Add(value);
+            teelement.AddInfo(value);
+            this._ElementsList.Add(teelement);
+            this.NbrOfElements++;
         }
 
-        private List<string> GetElementsList()
+        private List<string> GetElementsKeyList()
         {
             List<string> locList = new List<string>();
 
@@ -53,20 +57,5 @@ namespace VCFList
 
             return locList;
         }
-
-        private int ScanForElement(string value)
-        {
-            VCFElement teelement = new VCFElement();
-
-            teelement.AddInfo(value);
-            this._ElementsList.Add(teelement);
-            this.NbrOfElements++;
-            return 1;
-        }
-    }
-
-    class VCFCardVirt
-    {
-
     }
 }
